@@ -1,0 +1,18 @@
+language: c
+sudo: enabled
+dist: trusty
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get -y install libevent-dev libseccomp2 zlib1g-dev
+  - curl https://sh.rustup.rs -Ssf > rustup.sh
+  - HOME=src/rust CARGO_TARGET_DIR=src/rust/target sh rustup.sh -y --default-toolchain stable
+
+script: ./autogen.sh && ./configure $RUST_OPTIONS --disable-asciidoc && make test
+
+matrix:
+  include:
+    - env: RUST_OPTIONS="--enable-rust"
+    - env: RUST_OPTIONS=""
+
+  
