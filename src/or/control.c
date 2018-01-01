@@ -72,6 +72,7 @@
 #include "rendservice.h"
 #include "rephist.h"
 #include "router.h"
+#include "routerkeys.h"
 #include "routerlist.h"
 #include "routerparse.h"
 #include "shared_random.h"
@@ -2933,6 +2934,29 @@ getinfo_helper_sr(control_connection_t *control_conn,
   return 0;
 }
 
+/* Implementation helper for GETINFO; answers queries about the signing key
+ * certificate expiration time. */
+static int
+getinfo_helper_certificate(control_connection_t *control_conn,
+                           const char *question, char **answer,
+                           const char **errmsg)
+{
+  (void) control_conn;
+  (void) errmsg;
+  const tor_cert_t *signing_key;
+
+  tor_assert(server_identity_key_is_set());
+  signing_key = get_master_signing_key_cert();
+
+  *answer = tor_malloc(ISO_TIME_LEN+1);
+
+  if (!strcmp(question, "certificate/valid-until")) {
+    format_iso_time(*answer, signing_key->valid_until);
+  }
+
+  return 0;
+}
+
 /** Callback function for GETINFO: on a given control connection, try to
  * answer the question <b>q</b> and store the newly-allocated answer in
  * *<b>a</b>. If an internal error occurs, return -1 and optionally set
@@ -3134,6 +3158,7 @@ static const getinfo_item_t getinfo_items[] = {
        "Onion services detached from the control connection."),
   ITEM("sr/current", sr, "Get current shared random value."),
   ITEM("sr/previous", sr, "Get previous shared random value."),
+  ITEM("certificate/valid-until", certificate, "The expiration time for the current signing key certificate."),
   { NULL, NULL, NULL, 0 }
 };
 
